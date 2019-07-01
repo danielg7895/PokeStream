@@ -27,12 +27,16 @@ class Song:
 
     def __init__(self, path=None):
         if path:
-            self.set_metadata(path)
+            self.folder_path = path
 
 
-    def set_metadata(self, path):
-        if Path(path).suffix == ".mp3":
-            songinfo = EasyMP3(path)
+    def set_metadata(self):
+        if not self.folder_path:
+            print("[set_metadata] ERROR, NO FOLDER PATH ")
+            return
+
+        if Path(self.folder_path).suffix == ".mp3":
+            songinfo = EasyMP3(r''+self.folder_path)
             songinfo_tags = songinfo.tags
             self.title          = self.set_tag_securely(songinfo_tags, "title")
             self.artist         = self.set_tag_securely(songinfo_tags, "artist")
@@ -43,7 +47,6 @@ class Song:
 
             self.length         = songinfo.info.length
             self.bitrate        = songinfo.info.bitrate
-            self.folder_path    = path
             self.type           = ".mp3"
 
 
@@ -54,4 +57,6 @@ class Song:
             value = tags[tagname][0]
         except EasyID3KeyError:
             pass
+        except KeyError:
+            print("KEY ERROR CON ", tagname)
         return value

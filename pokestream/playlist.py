@@ -1,6 +1,6 @@
 from tkinter import filedialog
 import tkinter
-from os import listdir
+from os import listdir, walk
 from os.path import isfile, join, isdir, exists
 from pathlib import Path
 from shutil import copy
@@ -44,6 +44,8 @@ class PlayList:
 
     def next_song(self):
         self.increase_data()
+        if self.current != None:
+            self.current.set_metadata()
 
 
     def previous_song(self):
@@ -78,7 +80,6 @@ class PlayList:
         file_path = filedialog.askdirectory(initialdir = ".", title = "Select folder")
         try:
             self.url_playlist = self.search_sound_files(file_path)
-            print(self.url_playlist)
         except FileNotFoundError:
             print("[PlayList][search_sound_files][ERROR] directorio: " + path + " no existe.")
 
@@ -88,8 +89,8 @@ class PlayList:
     def save_playlist(self):
         # Guardo la lista de playlist de la clase en un archivo .pks en la carpeta especificada
         if len(self.url_playlist) > 0:
-            str_list = ",".join(self.url_playlist)
-            with open("playlist.pks", "w+") as pks:
+            str_list = "|".join(self.url_playlist)
+            with open("playlist.pks", "w+", encoding="utf-8") as pks:
                 pks.write(str_list)
         else:
             print("[ERROR] la playlist que se intenta guardar esta vacia")
@@ -99,8 +100,8 @@ class PlayList:
         # abro la playlist del working directory actual con nombre playlist.pks
         # Si no existe, le pido al usuario para buscarla o crearla.
         try:
-            with open(path, "r") as pks:
-                self.url_playlist = pks.read().split(",")
+            with open(path, "r", encoding="utf-8") as pks:
+                self.url_playlist = pks.read().split("|")
         except FileNotFoundError:
             print("Error, playlist no encontrada, opciones:")
             print("1) Buscar archivo playlist (.pks)")
@@ -112,8 +113,8 @@ class PlayList:
                 file_path = filedialog.askopenfilename(initialdir = ".", title = "Select .pks", filetypes=[("Playlist files", "*.pks")])
 
                 # Leo el archivo, lo separo por comas y la agrego a la playlist
-                with open(file_path, "r") as pl:
-                    self.url_playlist = pl.read().split(",")
+                with open(file_path, "r", encoding="utf-8") as pl:
+                    self.url_playlist = pl.read().split("|")
 
             elif reply == "2":
                 self.create_playlist()
@@ -122,23 +123,14 @@ class PlayList:
                 print("Opcion invalida.")
 
 
-    def search_sound_files(self, path, sound_files=[]):
-        # Busco archivos de sonido de forma recursiva y devuelve una lista
-        # con todos los archivos que tengan de extension una de las permitidas
-        directories = listdir(path)
-        soundfiles = sound_files
-        for x in directories:
-            curr = join(path, x)
-            if (isdir(curr)):
-                soundfiles = search_sound_files(curr, soundfiles)
-            else:
-                # Si no es directorio es porque es un archivo
-                # Si la extension del archivo esta en la lista de extensiones permitidas
-                # la agerego a la playlist
-                suffix = Path(curr).suffix
-                if suffix in self.allowed_extensions:
-                    soundfiles.append(curr)
-                    print(soundfiles)
+    def search_sound_files(self, path):
+        soundfiles = []
+        for root, dirs, files in walk(path):
+            for sound in files:
+                sound = join(root, sound)
+                if Path(sound).suffix in self.allowed_extensions:
+                    soundfiles.append(sound)
         return soundfiles
+
 
 class PlayListNotLoaded(Exception): pass
