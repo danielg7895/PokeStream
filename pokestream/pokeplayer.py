@@ -4,6 +4,8 @@ import os
 from mutagen import File
 import traceback
 import threading
+from PIL import Image
+import io
 
 from .playlist import PlayList
 
@@ -98,11 +100,13 @@ class PokePlayer:
         artwork = ""
         try:
             artwork = file.tags['APIC:'].data
+            img = Image.open(io.BytesIO(artwork))
+            new_img = img.resize((400,400))
         except KeyError:
             print("Esta imagen no tiene artwork ", self.playlist.current.folder_path)
             return
-        with open('album.jpg', 'wb') as img:
-            img.write(artwork)
+        new_img.save("album.png", "PNG")
+
 
 
     def save_track_count(self):
